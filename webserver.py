@@ -1,7 +1,7 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import cgi
 
-# import CRUD Operations from Lesson 1 ##
+# import CRUD Operations ##
 from database_setup import Base, Restaurant, MenuItem
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
