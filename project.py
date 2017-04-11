@@ -15,6 +15,18 @@ import json
 from flask import make_response
 import requests
 
+# Imports for login required decorator
+from functools import wraps
+from flask import g, request, redirect, url_for
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if name is None:
+            return redirect(url_for('showLogin', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
 CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
 
 
@@ -85,7 +97,7 @@ def gconnect():
         response.headers['Content-Type'] = 'application/json'
 
     # Store the access token in the session for later use.
-    login_session['credentials'] = credentials
+    login_session['credentials'] = credentials.to_json()
     login_session['gplus_id'] = gplus_id
 
     # Get user info
@@ -130,6 +142,7 @@ def restaurantMenu(restaurant_id):
 
 # Task 1: Create route for newMenuItem function here
 @app.route('/restaurant/<int:restaurant_id>/new/', methods=['GET','POST'])
+@login_required
 def newMenuItem(restaurant_id):
     if request.method == 'POST':
         newItem = MenuItem(name = request.form['name'],restaurant_id  = restaurant_id)
@@ -143,6 +156,7 @@ def newMenuItem(restaurant_id):
     
 # Task 2: Create route for editMenuItem function here
 @app.route('/restaurant/<int:restaurant_id>/<int:menu_id>/edit/', methods = ['GET', 'POST'])
+@login_required
 def editMenuItem(restaurant_id, menu_id):
     editedItem = session.query(MenuItem).filter_by(id=menu_id).one()
     if request.method == 'POST':
@@ -160,6 +174,7 @@ def editMenuItem(restaurant_id, menu_id):
 
 # Task 3: Create a route for deleteMenuItem function here
 @app.route('/restaurant/<int:restaurant_id>/<int:menu_id>/delete/', methods = ['GET', 'POST'])
+@login_required
 def deleteMenuItem(restaurant_id, menu_id):
     itemToDelete = session.query(MenuItem).filter_by(id = menu_id).one()
     if request.method == 'POST':
