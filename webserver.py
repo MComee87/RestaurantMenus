@@ -82,10 +82,15 @@ class webServerHandler(BaseHTTPRequestHandler):
                     output += restaurant.name
                     output += "</br>"
                     # Objective 2 -- Add Edit and Delete Links
+                    output += "<a href ='#' >Edit </a> "
+                    output += "</br>"
+                    output += "<a href =' #'> Delete </a>"
+                    output += "</br></br></br>"
                     # Objective 4 -- Replace Edit href
-
                     output += "<a href ='/restaurants/%s/edit' >Edit </a> " % restaurant.id
                     output += "</br>"
+                    output += "<a href =' #'> Delete </a>"
+                    output += "</br></br></br>"
                     # Objective 5 -- Replace Delete href
                     output += "<a href ='/restaurants/%s/delete'> Delete </a>" % restaurant.id
                     output += "</br></br></br>"
