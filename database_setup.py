@@ -49,6 +49,3 @@ engine = create_engine('sqlite:///restaurantmenu.db')
  
 
 Base.metadata.create_all(engine)
-
-    Contact GitHub API Training Shop Blog About 
-
