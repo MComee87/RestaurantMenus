@@ -3,32 +3,34 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Restaurant, MenuItem
 
-app = Flask(__name__)
-
 # New imports for google sign in
 from flask import session as login_session
-import random, string
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
-import httplib2
-import json
 from flask import make_response
-import requests
 
 # Imports for login required decorator
 from functools import wraps
 from flask import g, request, redirect, url_for
 
+import random, string
+import requests
+import httplib2
+import json
+
+app = Flask(__name__)
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if name is None:
-            return redirect(url_for('showLogin', next=request.url))
-        return f(*args, **kwargs)
+        if 'username' in login_session:
+            return f(*args, **kwargs)
+        else:
+            flash("You are not allowed to access there")
+            return redirect('/login')
     return decorated_function
 
 CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
-
 
 engine = create_engine('sqlite:///restaurantmenu.db')
 Base.metadata.bind = engine
@@ -61,7 +63,6 @@ def gconnect():
         response = make_response(json.dumps('Failed to upgrade the authorization code.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-
 
     # Check that the access token is valid.
     access_token = credentials.access_token
@@ -103,8 +104,8 @@ def gconnect():
     # Get user info
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
     params = {'access_token': credentials.access_token, 'alt':'json'}
-    answer = request.get(userinfo_url, params=params)
-    data = json.loads(answer.txt)
+    answer = requests.get(userinfo_url, params=params)
+    data = answer.json()
 
     login_session['username'] = data["name"]
     login_session['picture'] = data["picture"]
@@ -118,20 +119,12 @@ def gconnect():
     flash("you are now logged in as %s"%login_session['username'])
     return output
 
-
-
-
-
-
-        
-        
 #JSON APIs to view Restaurant Information
 @app.route('/restaurant/<int:restaurant_id>/menu/JSON')
 def restaurantMenuJSON(restaurant_id):
     restaurant = session.query(Restaurant).filter_by(id = restaurant_id).one()
     items = session.query(MenuItem).filter_by(restaurant_id = restaurant_id).all()
     return jsonify(MenuItems=[i.serialize for i in items])
-
 
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/JSON')
 def menuItemJSON(restaurant_id, menu_id):
@@ -143,12 +136,11 @@ def restaurantsJSON():
     restaurants = session.query(Restaurant).all()
     return jsonify(restaurants= [r.serialize for r in restaurants])
 
-
 #Show all restaurants
 @app.route('/')
 @app.route('/restaurant/')
 def showRestaurants():
-  restaurants = session.query(Restaurant).order_by(asc(Restaurant.name))
+  restaurants = session.query(Restaurant).order_by(Restaurant.name.asc())
   return render_template('restaurants.html', restaurants = restaurants)
 
 #Create a new restaurant
@@ -177,7 +169,6 @@ def editRestaurant(restaurant_id):
   else:
     return render_template('editRestaurant.html', restaurant = editedRestaurant)
 
-
 #Delete a restaurant
 @app.route('/restaurant/<int:restaurant_id>/delete/', methods = ['GET','POST'])
 @login_required
@@ -199,8 +190,6 @@ def showMenu(restaurant_id):
     items = session.query(MenuItem).filter_by(restaurant_id = restaurant_id).all()
     return render_template('menu.html', items = items, restaurant = restaurant)
      
-
-
 #Create a new menu item
 @app.route('/restaurant/<int:restaurant_id>/menu/new/',methods=['GET','POST'])
 @login_required
@@ -219,7 +208,6 @@ def newMenuItem(restaurant_id):
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/edit', methods=['GET','POST'])
 @login_required
 def editMenuItem(restaurant_id, menu_id):
-
     editedItem = session.query(MenuItem).filter_by(id = menu_id).one()
     restaurant = session.query(Restaurant).filter_by(id = restaurant_id).one()
     if request.method == 'POST':
@@ -238,7 +226,6 @@ def editMenuItem(restaurant_id, menu_id):
     else:
         return render_template('editmenuitem.html', restaurant_id = restaurant_id, menu_id = menu_id, item = editedItem)
 
-
 #Delete a menu item
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/delete', methods = ['GET','POST'])
 @login_required
@@ -252,7 +239,6 @@ def deleteMenuItem(restaurant_id,menu_id):
         return redirect(url_for('showMenu', restaurant_id = restaurant_id))
     else:
         return render_template('deleteMenuItem.html', item = itemToDelete)
-
 
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
